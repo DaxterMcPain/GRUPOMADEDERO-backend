@@ -1,21 +1,24 @@
-export const obtenerProductos = (req, res) => {
-  const productos = [
-    {
-      id: 1,
-      nombre: "Parihuela de Durmientes",
-      categoria: "Embalajes Industriales",
-      descripcion: "Parihuela reforzada para carga pesada y minería."
-    },
-    {
-      id: 2,
-      nombre: "Madera Habilitada a Medida",
-      categoria: "Dimensionados",
-      descripcion: "Corte de alta precisión listo para obra."
-    }
-  ];
+import db from '../config/db.js';
 
-  res.json({
-    ok: true,
-    data: productos
-  });
+export const obtenerProductos = async (req, res) => {
+  try {
+    const [filas] = await db.query('SELECT * FROM productos');
+
+    // Parsear el campo JSON 'detalles' si llega como string desde la BD
+    const productosFormateados = filas.map(prod => ({
+      ...prod,
+      detalles: typeof prod.detalles === 'string' ? JSON.parse(prod.detalles) : prod.detalles
+    }));
+
+    res.json({
+      ok: true,
+      data: productosFormateados
+    });
+  } catch (error) {
+    console.error('Error al consultar productos en MySQL:', error);
+    res.status(500).json({
+      ok: false,
+      mensaje: 'Error interno al consultar la base de datos'
+    });
+  }
 };
