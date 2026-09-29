@@ -1,16 +1,18 @@
 import db from '../config/db.js';
 
 // Obtener todos los productos
-export const obtenerProductos = async (req, res) => {
+export const getProductos = async (req, res) => {
   try {
-    const [filas] = await db.query('SELECT * FROM productos ORDER BY id DESC');
-    const productosFormateados = filas.map(prod => ({
-      ...prod,
-      detalles: typeof prod.detalles === 'string' ? JSON.parse(prod.detalles) : prod.detalles
-    }));
-    res.json({ ok: true, data: productosFormateados });
+    const [rows] = await db.query('SELECT * FROM productos');
+    res.json(rows);
   } catch (error) {
-    res.status(500).json({ ok: false, mensaje: 'Error al consultar productos' });
+    // ESTA LÍNEA ES CLAVE: Imprime el error exacto en la consola de Render
+    console.error('Error detallado en GET /api/productos:', error);
+    
+    res.status(500).json({ 
+      mensaje: 'Error al obtener productos', 
+      detalles: error.message 
+    });
   }
 };
 
