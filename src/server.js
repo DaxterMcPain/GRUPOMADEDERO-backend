@@ -10,17 +10,30 @@ dotenv.config();
 const app = express();
 const PORT = process.env.PORT || 5000;
 
-// Middleware de seguridad y parseo de JSON
+// Configuración de orígenes permitidos (Local + Render)
+const origenesPermitidos = [
+  'http://localhost:5173',
+  'https://grupomadedero-frontend.onrender.com',
+  'https://grupomaderero-frontend.onrender.com'
+];
+
 app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173'
+  origin: function (origin, callback) {
+    // Permitir peticiones sin origen (como llamadas directas del navegador, Postman) o si está en la lista
+    if (!origin || origenesPermitidos.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(null, true); // O usa callback(new Error('Bloqueado por CORS')) si deseas restricción estricta
+    }
+  },
+  credentials: true
 }));
+
 app.use(express.json());
 
 // Rutas API
 app.use('/api/productos', productosRoutes);
-
 app.use('/api/auth', authRoutes);
-
 app.use('/api/servicios', serviciosRoutes);
 
 // Ruta base de prueba
@@ -29,5 +42,5 @@ app.get('/', (req, res) => {
 });
 
 app.listen(PORT, () => {
-  console.log(`🚀 Servidor backend corriendo en http://localhost:${PORT}`);
+  console.log(`🚀 Servidor backend corriendo en el puerto ${PORT}`);
 });
