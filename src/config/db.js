@@ -7,7 +7,7 @@ const db = mysql.createPool({
   host: process.env.DB_HOST,
   user: process.env.DB_USER,
   password: process.env.DB_PASSWORD,
-  database: process.env.DB_NAME,
+  database: process.env.DB_NAME || 'grupo_maderero_db',
   port: process.env.DB_PORT ? Number(process.env.DB_PORT) : 27297,
   ssl: { rejectUnauthorized: false }, // REQUERIDO PARA AIVEN
   waitForConnections: true,
