@@ -1,7 +1,7 @@
 import db from '../config/db.js';
 
 // Obtener todos los productos
-export const getProductos = async (req, res) => {
+export const obtenerProductos = async (req, res) => {
   try {
     const [rows] = await db.query('SELECT * FROM productos');
     res.json(rows);
