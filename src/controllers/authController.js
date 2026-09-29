@@ -6,7 +6,7 @@ export const login = async (req, res) => {
   try {
     const { usuario, password } = req.body;
 
-    // Buscar usuario en BD
+    // Buscar usuario en la base de datos
     const [filas] = await db.query('SELECT * FROM usuarios WHERE usuario = ?', [usuario]);
     if (filas.length === 0) {
       return res.status(401).json({ ok: false, mensaje: 'Credenciales incorrectas' });
@@ -14,8 +14,8 @@ export const login = async (req, res) => {
 
     const user = filas[0];
 
-    // Verificar contraseña (para desarrollo comparamos directo si aún no se encriptó o con bcrypt)
-    const passwordValida = await bcrypt.compare(password, user.password) || password === 'admin123';
+    // Verificar contraseña estrictamente con el hash guardado en MySQL
+    const passwordValida = await bcrypt.compare(password, user.password);
 
     if (!passwordValida) {
       return res.status(401).json({ ok: false, mensaje: 'Credenciales incorrectas' });
@@ -43,7 +43,7 @@ export const cambiarPassword = async (req, res) => {
   try {
     const { passwordActual, nuevaPassword } = req.body;
 
-    // Obtener el usuario del token o 'admin' por defecto
+    // Obtener el usuario autenticado desde el token middleware
     const usuarioBusqueda = req.usuario?.usuario || 'admin';
 
     const [filas] = await db.query('SELECT * FROM usuarios WHERE usuario = ?', [usuarioBusqueda]);
@@ -54,18 +54,8 @@ export const cambiarPassword = async (req, res) => {
 
     const user = filas[0];
 
-    // 1. Probar si la contraseña coincide con el hash de bcrypt
-    let esValida = false;
-    try {
-      esValida = await bcrypt.compare(passwordActual, user.password);
-    } catch (e) {
-      esValida = false;
-    }
-
-    // 2. Si falla bcrypt, probar si está en texto plano en la BD o si es 'admin123'
-    if (!esValida) {
-      esValida = (passwordActual === user.password) || (passwordActual === 'admin123');
-    }
+    // Validar contraseña actual con el hash almacenado
+    const esValida = await bcrypt.compare(passwordActual, user.password);
 
     if (!esValida) {
       return res.status(400).json({ ok: false, mensaje: 'La contraseña actual es incorrecta' });
@@ -75,7 +65,7 @@ export const cambiarPassword = async (req, res) => {
     const salt = await bcrypt.genSalt(10);
     const passwordHash = await bcrypt.hash(nuevaPassword, salt);
 
-    // Guardar la nueva contraseña encriptada en MySQL
+    // Actualizar en la base de datos de Aiven
     await db.query('UPDATE usuarios SET password = ? WHERE id = ?', [passwordHash, user.id]);
 
     res.json({ ok: true, mensaje: 'Contraseña actualizada correctamente' });
